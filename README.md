@@ -1,14 +1,24 @@
-# Welcome to your CDK TypeScript project
+## Product Service — Lambda + API Gateway with OpenAPI Docs
 
-This is a blank project for CDK development with TypeScript.
+### Summary
+Implements the Product Service as a set of AWS Lambda functions exposed via API Gateway, adds OpenAPI (Swagger) documentation, unit tests, and CORS support for cross-origin access.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+### Changes
 
-## Useful commands
+#### Features
+- **Product Service Lambda handlers** — `getProductsList` returns all products as a `Product[]` array; `getProductsById` returns a single flat `Product` object and throws a structured `[NotFound]` error for missing IDs
+- **API Gateway (CDK)** — `GET /products` and `GET /products/{id}` endpoints wired to their respective Lambda functions via non-proxy `LambdaIntegration`
+- **OpenAPI spec** (`swagger.yaml`) — full OpenAPI 3.0 documentation covering both endpoints, request/response schemas, error responses, and examples
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+#### Fixes
+- **CORS** — added `Access-Control-Allow-Origin: *` to `integrationResponses` and `methodResponses` for both `GET` methods to fix missing CORS header on actual responses (not just preflight)
+
+#### Tests
+- Unit tests for `getProductsList` — verifies array return and length
+- Unit tests for `getProductsById` — verifies correct product returned by ID, and that a `[NotFound]` error is thrown for unknown IDs
+
+### Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/products` | Returns all products as an array |
+| `GET` | `/products/{id}` | Returns a single product by UUID |
