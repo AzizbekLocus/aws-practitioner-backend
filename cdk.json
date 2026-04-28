@@ -1,5 +1,5 @@
 {
-  "app": "node_modules/.bin/ts-node --prefer-ts-exts bin/aws-practitioner-backend.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/aws-practitioner-backend.ts",
   "watch": {
     "include": ["**"],
     "exclude": [
