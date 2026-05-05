@@ -22,7 +22,7 @@ paths:
   /products:
     get:
       summary: Get all products
-      description: Returns the full list of available products.
+      description: Returns the full list of available products (joined product + stock).
       operationId: getProductsList
       tags:
         - Products
@@ -39,13 +39,46 @@ paths:
                 - id: "6023a861-92ec-430d-81a9-d66dc8e5f8ca"
                   title: "Wireless Noise-Cancelling Headphones"
                   description: "Over-ear headphones with active noise cancellation and 30-hour battery life."
-                  price: 299.99
+                  price: 299
+                  count: 10
                 - id: "d2a69d18-59f7-4ae3-80a5-6b45843db835"
                   title: "Mechanical Keyboard"
                   description: "Tenkeyless mechanical keyboard with Cherry MX switches and RGB backlight."
-                  price: 129.99
+                  price: 129
+                  count: 5
         "404":
           description: No products found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Create a new product
+      description: Creates a new product entry in the products and stock tables atomically.
+      operationId: createProduct
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+            example:
+              title: "New Gadget"
+              description: "A shiny new gadget."
+              price: 99
+              count: 20
+      responses:
+        "201":
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Validation error
           content:
             application/json:
               schema:
@@ -54,7 +87,7 @@ paths:
   /products/{id}:
     get:
       summary: Get product by ID
-      description: Returns a single product matching the provided ID.
+      description: Returns a single product (joined product + stock) matching the provided ID.
       operationId: getProductsById
       tags:
         - Products
@@ -78,7 +111,8 @@ paths:
                 id: "6023a861-92ec-430d-81a9-d66dc8e5f8ca"
                 title: "Wireless Noise-Cancelling Headphones"
                 description: "Over-ear headphones with active noise cancellation and 30-hour battery life."
-                price: 299.99
+                price: 299
+                count: 10
         "404":
           description: Product not found
           content:
@@ -97,6 +131,7 @@ components:
         - title
         - description
         - price
+        - count
       properties:
         id:
           type: string
@@ -112,10 +147,39 @@ components:
           description: Detailed product description
           example: "Over-ear headphones with active noise cancellation and 30-hour battery life."
         price:
-          type: number
-          format: float
+          type: integer
           description: Product price in USD
-          example: 299.99
+          example: 299
+        count:
+          type: integer
+          minimum: 0
+          description: Number of items available in stock
+          example: 10
+
+    CreateProductRequest:
+      type: object
+      required:
+        - title
+        - price
+        - count
+      properties:
+        title:
+          type: string
+          description: Product name
+          example: "New Gadget"
+        description:
+          type: string
+          description: Detailed product description
+          example: "A shiny new gadget."
+        price:
+          type: integer
+          description: Product price in USD (must be positive)
+          example: 99
+        count:
+          type: integer
+          minimum: 0
+          description: Initial stock count
+          example: 20
 
     ErrorResponse:
       type: object
