@@ -5,11 +5,11 @@
     "aws-practitioner-backend": "bin/aws-practitioner-backend.js"
   },
   "scripts": {
-    "build": "./node_modules/.bin/tsc",
-    "watch": "./node_modules/.bin/tsc -w",
+    "build": "npx tsc",
+    "watch": "npx tsc -w",
     "test": "jest",
-    "cdk": "./node_modules/.bin/cdk",
-    "cdk:deploy": "npm run build && ./node_modules/.bin/cdk deploy --require-approval never --all",
+    "cdk": "npx cdk",
+    "cdk:deploy": "npm run build && npx cdk deploy --require-approval never --all",
     "fillTables": "ts-node scripts/fillTables.ts"
   },
   "devDependencies": {

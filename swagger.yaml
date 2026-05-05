@@ -1,22 +1,14 @@
 openapi: "3.0.3"
 info:
-  title: Products Service API
-  description: API for managing and retrieving product catalog data.
+  title: Products & Import Service API
+  description: API for managing and retrieving product catalog data, and importing products via CSV.
   version: "1.0.0"
 
 servers:
   - url: https://snxmmu8nxb.execute-api.us-east-1.amazonaws.com/prod/
-    description: AWS API Gateway
-    variables:
-      apiId:
-        default: "your-api-id"
-        description: API Gateway ID (see ProductsApiUrl CDK output)
-      region:
-        default: "us-east-1"
-        description: AWS region
-      stage:
-        default: "prod"
-        description: Deployment stage
+    description: Products Service API Gateway
+  - url: https://p3l6m91vdi.execute-api.us-east-1.amazonaws.com/prod/
+    description: Import Service API Gateway
 
 paths:
   /products:
@@ -121,6 +113,41 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 message: "Product with id 6023a861-92ec-430d-81a9-d66dc8e5f8ca not found"
+
+  /import:
+    get:
+      summary: Get a presigned S3 URL for CSV upload
+      description: >
+        Returns a presigned S3 PUT URL for the given file name.
+        The client should then PUT the CSV file directly to S3 using this URL.
+        The file will be placed in the `uploaded/` folder of the import bucket.
+      operationId: importProductsFile
+      tags:
+        - Import
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: The CSV file name (e.g. `products.csv`). Used as the S3 object key suffix.
+          schema:
+            type: string
+          example: "products.csv"
+      responses:
+        "200":
+          description: A presigned S3 PUT URL valid for 5 minutes
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "https://importservicestack-importbucket.s3.us-east-1.amazonaws.com/uploaded/products.csv?X-Amz-Algorithm=..."
+        "400":
+          description: Missing required query parameter `name`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                message: "Query parameter 'name' is required"
 
 components:
   schemas:
