@@ -1,6 +1,10 @@
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as snsSubscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import { Construct } from "constructs";
@@ -11,6 +15,8 @@ const PRODUCTS_TABLE_NAME = "products";
 const STOCK_TABLE_NAME = "stock";
 
 export class ProductServiceStack extends cdk.Stack {
+  public readonly catalogItemsQueue: sqs.Queue;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -29,6 +35,47 @@ export class ProductServiceStack extends cdk.Stack {
       PRODUCTS_TABLE_NAME,
       STOCK_TABLE_NAME,
     };
+
+    // SQS queue
+    this.catalogItemsQueue = new sqs.Queue(this, "catalogItemsQueue", {
+      queueName: "catalogItemsQueue",
+      visibilityTimeout: cdk.Duration.seconds(30),
+    });
+
+    // SNS topic + email subscription
+    const createProductTopic = new sns.Topic(this, "createProductTopic", {
+      topicName: "createProductTopic",
+    });
+    createProductTopic.addSubscription(
+      new snsSubscriptions.EmailSubscription(
+        "aslonovazizbek.shared@gmail.com"
+      )
+    );
+
+    // Lambda: catalogBatchProcess
+    const catalogBatchProcessFn = new lambda.Function(
+      this,
+      "catalogBatchProcess",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 1024,
+        timeout: cdk.Duration.seconds(30),
+        handler: "catalogBatchProcess.main",
+        code: lambda.Code.fromAsset(lambdaPath),
+        environment: {
+          ...sharedEnv,
+          SNS_TOPIC_ARN: createProductTopic.topicArn,
+        },
+      }
+    );
+    productsTable.grantWriteData(catalogBatchProcessFn);
+    stockTable.grantWriteData(catalogBatchProcessFn);
+    createProductTopic.grantPublish(catalogBatchProcessFn);
+    catalogBatchProcessFn.addEventSource(
+      new lambdaEventSources.SqsEventSource(this.catalogItemsQueue, {
+        batchSize: 5,
+      })
+    );
 
     const getProductsLambdaFunction = new lambda.Function(
       this,

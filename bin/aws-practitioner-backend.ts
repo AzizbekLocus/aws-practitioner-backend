@@ -8,6 +8,9 @@ const app = new cdk.App();
 
 new HelloLambdaStack(app, "HelloLambdaStack", {});
 
-new ProductServiceStack(app, "ProductServiceStack", {});
+const productStack = new ProductServiceStack(app, "ProductServiceStack", {});
 
-new ImportServiceStack(app, "ImportServiceStack", {});
+new ImportServiceStack(app, "ImportServiceStack", {
+  queueUrl: productStack.catalogItemsQueue.queueUrl,
+  queueArn: productStack.catalogItemsQueue.queueArn,
+});
